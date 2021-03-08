@@ -3,8 +3,7 @@
 Hidecall is header-only C++ library that obfuscates function calls and
 hides them in decompiler, what makes reverse-engineering very annoying.
 
-It works for MSVC compiler and it's recommended only for x86 platform.
-Check out why in [hidecall.h](hidecall/hidecall.h)
+It is developed and supported for MSVC compiler
 
 ## Usage
 
@@ -27,7 +26,7 @@ Basically you wrap your function signature into a macro and split it using comma
 - before name
 - after name
 
-Use PACK() if return type has comma inside.
+Use PACK() macro if return type has comma inside.
 
 That's it! You don't have to modify any code other than that.
 You can even use it for main function, there are no restrictions about it.
@@ -50,19 +49,20 @@ PS: I don't have IDA so i couldn't check it there.
 
 Types of HIDECALL:
 
-- HIDECALL - hidecall definition for functions
-- HIDECALL_LEVEL - as above, but with external linenumber concatenation level
-- HIDECALL_DECLARE - hidecall function declaration
-- HIDECALL_CLASS - hidecall definition for class member functions
-- HIDECALL_CLASS_LEVEL - as above, but with external linenumber concatenation level
+- __HIDECALL_DECLARE__ - hidecall function declaration
+- __HIDECALL__ - hidecall definition for functions
+- __HIDECALL_LEVEL__ - as above, but with external linenumber concatenation level
+- __HIDECALL_CLASS__ - hidecall definition for class member functions
+- __HIDECALL_CLASS_LEVEL__ - as above, but with external linenumber concatenation level
 
 ### Limitations
 
 - No support for lambdas
+- No support for x64 architecture, x86 only
 
 ### Consequences
 
-- MESS inside a namespace, because hidecall defines two additional
+- __MESS__ inside a namespace, because hidecall defines two additional
   functions per one protected function. That's why i suggest
   switching to hidecall after writing the actual code
 - Increased compiled binary size
