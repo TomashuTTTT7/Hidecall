@@ -1,14 +1,16 @@
 # Hidecall
 
 Hidecall is header-only C++ library that obfuscates function calls and
-hides them in decompiler, what makes reverse-engineering very annoying.
+hides them in decompiler, what makes reverse-engineering very ~~hard~~ annoying.
 
-It is developed and supported for MSVC compiler
+It is developed and supported for MSVC compiler and x86 program architecture
 
 ## Usage
 
 In order to apply Hidecall, modify function definition signature as follows:
 ```cpp
+#include "hidecall.h"
+
 //Before
 static int foo(int a, char b)
 {
@@ -35,11 +37,19 @@ Your function should work exactly the same way as before applying hidecall. If s
 
 For explanation visit [hidecall.h](hidecall/hidecall.h) and for more examples see [example.cpp](hidecall/example.cpp)
 
+### Configuration
+
+Before using, visit [hidecall.h](hidecall/hidecall.h) and change preprocessor definitions to your own preferences in *HC_CONFIG* region.
+
 ### Decompilation
+
+Using HIDECALL makes following changes in decompilation:
+- Removes function references
+- Cuts off call paths
+- Removes auto parameter deduction
 
 Ghidra decompilation example:
 ![Preview](example.png)
-As you can see, Hidecall cut off call paths and disabled default signature deduction
 
 I tested it on some decompilers, including Ghidra, JEB, Snowman, Retdec and they are all fooled.
 
@@ -66,10 +76,12 @@ Types of HIDECALL:
   functions per one protected function. That's why i suggest
   switching to hidecall after writing the actual code
 - Increased compiled binary size
+- Disables automatic function inlining
+- A bit slower program execution (The call itself is around 2x to 3.3x slower, but the rest of the program is as fast as normal)
 
 ### Restrictions
  
-- Do not use __\_\_COUNTER\_\___ in your program, because it is a part of obfuscation randomization and changing its value can break your program
+- Do not use __\_\_COUNTER\_\___ in your program, because it is a part of obfuscation randomization and changing its value can break your program. If you really need it, use it 5 times in a row.
 
 ## License
 Licensed under the [MIT License](LICENSE)
