@@ -20,25 +20,25 @@
 #pragma endregion
 
 
-#define HC__JOIN1(a)                          a
-#define HC__JOIN2(a, b)                       a##b
-#define HC__JOIN3(a, b, c)                    a##b##c
-#define HC__JOIN4(a, b, c, d)                 a##b##c##d
-#define HC__JOIN5(a, b, c, d, e)              a##b##c##d##e
-#define HC__JOIN6(a, b, c, d, e, f)           a##b##c##d##e##f
-#define HC__JOIN7(a, b, c, d, e, f, g)        a##b##c##d##e##f##g
-#define HC__JOIN8(a, b, c, d, e, f, g, h)     a##b##c##d##e##f##g##h
-#define HC__JOIN9(a, b, c, d, e, f, g, h, i)  a##b##c##d##e##f##g##h##i
+#define HC__JOIN1(a)                         a
+#define HC__JOIN2(a, b)                      a##b
+#define HC__JOIN3(a, b, c)                   a##b##c
+#define HC__JOIN4(a, b, c, d)                a##b##c##d
+#define HC__JOIN5(a, b, c, d, e)             a##b##c##d##e
+#define HC__JOIN6(a, b, c, d, e, f)          a##b##c##d##e##f
+#define HC__JOIN7(a, b, c, d, e, f, g)       a##b##c##d##e##f##g
+#define HC__JOIN8(a, b, c, d, e, f, g, h)    a##b##c##d##e##f##g##h
+#define HC__JOIN9(a, b, c, d, e, f, g, h, i) a##b##c##d##e##f##g##h##i
 
-#define HC_JOIN1(a)                           HC__JOIN1(a)
-#define HC_JOIN2(a, b)                        HC__JOIN2(a, b)
-#define HC_JOIN3(a, b, c)                     HC__JOIN3(a, b, c)
-#define HC_JOIN4(a, b, c, d)                  HC__JOIN4(a, b, c, d)
-#define HC_JOIN5(a, b, c, d, e)               HC__JOIN5(a, b, c, d, e)
-#define HC_JOIN6(a, b, c, d, e, f)            HC__JOIN6(a, b, c, d, e, f)
-#define HC_JOIN7(a, b, c, d, e, f, g)         HC__JOIN7(a, b, c, d, e, f, g)
-#define HC_JOIN8(a, b, c, d, e, f, g, h)      HC__JOIN8(a, b, c, d, e, f, g, h)
-#define HC_JOIN9(a, b, c, d, e, f, g, h, i)   HC__JOIN9(a, b, c, d, e, f, g, h, i)
+#define HC_JOIN1(a)                          HC__JOIN1(a)
+#define HC_JOIN2(a, b)                       HC__JOIN2(a, b)
+#define HC_JOIN3(a, b, c)                    HC__JOIN3(a, b, c)
+#define HC_JOIN4(a, b, c, d)                 HC__JOIN4(a, b, c, d)
+#define HC_JOIN5(a, b, c, d, e)              HC__JOIN5(a, b, c, d, e)
+#define HC_JOIN6(a, b, c, d, e, f)           HC__JOIN6(a, b, c, d, e, f)
+#define HC_JOIN7(a, b, c, d, e, f, g)        HC__JOIN7(a, b, c, d, e, f, g)
+#define HC_JOIN8(a, b, c, d, e, f, g, h)     HC__JOIN8(a, b, c, d, e, f, g, h)
+#define HC_JOIN9(a, b, c, d, e, f, g, h, i)  HC__JOIN9(a, b, c, d, e, f, g, h, i)
 
 #define HC_PP_RNG1() HC_JOIN1(__COUNTER__)
 #define HC_PP_RNG2() HC_JOIN2(__LINE__, __COUNTER__)
@@ -112,12 +112,13 @@
 __pragma(code_seg(push, seg1, HC_HANDLER_SEG))                                  \
 __declspec(noinline) modifiers ret fname __VA_ARGS__ {                          \
     __asm {                                                                     \
-        __asm leave                                                             \
-        __asm push ebp                                                          \
+        __asm mov esp, ebp                                                      \
         __asm mov ebp, fname##_HC + HC_PP_RNG_LEVEL(level)                      \
         __asm call fname##_HC_sub                                               \
         __asm pop eax                                                           \
-        __asm xchg ebp, eax                                                     \
+        __asm xor ebp, eax                                                      \
+        __asm xor eax, ebp                                                      \
+        __asm xor ebp, eax                                                      \
         __asm jmp edx                                                           \
     }                                                                           \
 }                                                                               \
@@ -130,9 +131,10 @@ __declspec(noinline) void fname##_HC_sub() {                                    
                 (((HC_PP_RNG_LEVEL(level) & 0x7fffffff) % 19) / 2) + HC_KEY + 2 \
         __asm add ebp, ((-HC_PP_RNG_LEVEL(level) + 2) & ~HC_KEY) +              \
                 (((HC_PP_RNG_LEVEL(level) & 0x7fffffff) % 13) / 2) + ~HC_KEY    \
-        __asm shr ebp, 4                                                        \
-        __asm xchg ebp, edx                                                     \
-        __asm shl edx, 4                                                        \
+        __asm and ebp, 0x7ffffff0                                               \
+        __asm xor ebp, edx                                                      \
+        __asm xor edx, ebp                                                      \
+        __asm xor ebp, edx                                                      \
     }                                                                           \
 }                                                                               \
 __pragma(code_seg(pop, seg2))                                                   \
