@@ -1,7 +1,7 @@
 # Hidecall
 
-Hidecall is header-only C++ library that obfuscates function calls and
-hides them in decompiler, what makes reverse-engineering very ~~hard~~ annoying.
+Hidecall is single-header C++ library that obfuscates function calls and
+hides them in decompilation, what makes reverse-engineering very ~~hard~~ annoying.
 
 It is developed and supported for MSVC compiler and x86 program architecture
 
@@ -31,15 +31,15 @@ Basically you wrap your function signature into a macro and split it using comma
 Use PACK() macro if return type has comma inside.
 
 That's it! You don't have to modify any code other than that.
-You can even use it for main function, there are no restrictions about it.
+You can even use it for main entry function as well, there are no restrictions about it.
 
 Your function should work exactly the same way as before applying hidecall. If something works differently, let me know by opening an issue.
 
-For explanation visit [hidecall.h](hidecall/hidecall.h) and for more examples see [example.cpp](hidecall/example.cpp)
+For explanation visit [hidecall.h](include/hidecall/hidecall.h) and for more examples see [example.cpp](examples/example.cpp)
 
 ### Configuration
 
-Before using, visit [hidecall.h](hidecall/hidecall.h) and change preprocessor definitions to your own preferences in *HC_CONFIG* region.
+Before using, visit [hidecall.h](include/hidecall/hidecall.h) and change preprocessor definitions to your own preferences in *HC_CONFIG* region.
 
 ### Decompilation
 
@@ -48,7 +48,7 @@ Using HIDECALL makes following changes in decompilation:
 - Cuts off call paths
 - Removes auto parameter deduction
 
-Ghidra decompilation example:
+There is an example decompilation:
 ![Preview](example.png)
 
 I tested it on some decompilers, including Ghidra, JEB, Snowman, Retdec and they are all fooled.
@@ -77,7 +77,7 @@ Types of HIDECALL:
   switching to hidecall after writing the actual code
 - Increased compiled binary size
 - Disables automatic function inlining
-- A bit slower program execution (The call itself is around 2x to 3.3x slower, but the rest of the program is as fast as normal)
+- A bit slower program execution (The call itself is over 2.5x slower, but the rest of the code is as fast as normal)
 
 ### Restrictions
  
