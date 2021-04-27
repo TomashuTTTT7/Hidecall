@@ -7,18 +7,17 @@
 // If concatenated number is higher than that, you'll get an error.
 // In such a case, use HIDECALL_LEVEL macro with lower level number
 // (6 by default)
-#define HC_DEFAULT_RNG_LEVEL 6
+#define HC_DEFAULT_RNG_LEVEL 6 // integer in range [1, 9]
 
 // KEY. Change it to your own random 32-bit number
-// It's not used for real encryption, but makes reverse-engineering a bit harder
+// It's not used for real encryption, but splits pointer decoding in two parts
 #define HC_KEY 0x7D90A5F1
 
 // Segment names
-#define HC_DECODE_SEG  ".ddata" // there will be function which decrypts obfuscated pointer
-#define HC_HANDLER_SEG ".hdata" // there will be function which handles your call and encodes the pointer
+#define HC_DECODE_SEG  ".ddata" // there will be function which decodes obfuscated pointer
+#define HC_HANDLER_SEG ".hdata" // there will be function which handles your call and contains obfuscated pointer
 
 #pragma endregion
-
 
 #define HC__JOIN1(a)                         a
 #define HC__JOIN2(a, b)                      a##b
@@ -58,8 +57,6 @@
 * This way it makes a huge decimal number, which then is converted to binary
 * in assembly instruction. Only 32 bits are saved, what makes this
 * number kinda unpredictable.
-* 
-* And no, constexpr value does not work here :(, i tried
 */
 
 #define PACK(...) __VA_ARGS__
@@ -97,14 +94,57 @@
 * See example.cpp for more examples with different function signatures.
 */
 
+//change to 1 if you really want to try x64 - if your compiler supports x64 inline assembly
+#define HC_IGNORE 0
 
 // PP_RNG_LEVEL has to be "called" in this macro 2, 5, 10 or 20 times etc.
 // I use additional code segments, because otherwise the real
 // function is right after the obfuscated one (that's not secure for sure)
+
+
+#pragma warning(disable:4731)
+
 #if defined(__LP64__) || defined(_LP64) || defined(_WIN64)
+
+#if HC_IGNORE
+
+#define HIDECALL_CLASS_LEVEL(level, modifiers, ret, fname, ...)                 \
+__pragma(code_seg(push, seg1, HC_HANDLER_SEG))                                  \
+__declspec(noinline) modifiers ret fname __VA_ARGS__ {                          \
+    __asm {                                                                     \
+        __asm mov rsp, rbp                                                      \
+        __asm mov rbp, fname##_HC + HC_PP_RNG_LEVEL(level) + 1 +                \
+                (((HC_PP_RNG_LEVEL(level) & 0x7fffffff) % 17) / 4)              \
+        __asm call fname##_HC_sub                                               \
+        __asm pop rax                                                           \
+        __asm xor rbp, rax                                                      \
+        __asm xor rax, rbp                                                      \
+        __asm xor rbp, rax                                                      \
+        __asm jmp rdx                                                           \
+    }                                                                           \
+}                                                                               \
+__pragma(code_seg(pop, seg1))                                                   \
+__pragma(code_seg(push, seg2, HC_DECODE_SEG))                                   \
+__declspec(noinline) void fname##_HC_sub() {                                    \
+    __asm {                                                                     \
+        __asm add rbp, ((-HC_PP_RNG_LEVEL(level) + 1) & HC_KEY) + HC_KEY + 1    \
+        __asm add rbp, ((-HC_PP_RNG_LEVEL(level) + 2) & ~HC_KEY) +              \
+                (((HC_PP_RNG_LEVEL(level) & 0x7fffffff) % 23) / 2) + ~HC_KEY    \
+        __asm and rbp, 0x7ffffffffffffff0                                       \
+        __asm xor rbp, rdx                                                      \
+        __asm xor rdx, rbp                                                      \
+        __asm xor rbp, rdx                                                      \
+    }                                                                           \
+}                                                                               \
+__pragma(code_seg(pop, seg2))                                                   \
+modifiers ret fname##_HC __VA_ARGS__
+
+#else
 
 #define HIDECALL_CLASS_LEVEL(level, modifiers, ret, fname, ...)
 #error HIDECALL: x64 architecture is not supported (at least for msvc)
+
+#endif
 
 #else
 
@@ -113,7 +153,8 @@ __pragma(code_seg(push, seg1, HC_HANDLER_SEG))                                  
 __declspec(noinline) modifiers ret fname __VA_ARGS__ {                          \
     __asm {                                                                     \
         __asm mov esp, ebp                                                      \
-        __asm mov ebp, fname##_HC + HC_PP_RNG_LEVEL(level)                      \
+        __asm mov ebp, fname##_HC + HC_PP_RNG_LEVEL(level) + 1 +                \
+                (((HC_PP_RNG_LEVEL(level) & 0x7fffffff) % 17) / 4)              \
         __asm call fname##_HC_sub                                               \
         __asm pop eax                                                           \
         __asm xor ebp, eax                                                      \
@@ -126,11 +167,9 @@ __pragma(code_seg(pop, seg1))                                                   
 __pragma(code_seg(push, seg2, HC_DECODE_SEG))                                   \
 __declspec(noinline) void fname##_HC_sub() {                                    \
     __asm {                                                                     \
-        /* Some obfuscation */                                                  \
-        __asm add ebp, ((-HC_PP_RNG_LEVEL(level)) & HC_KEY) +                   \
-                (((HC_PP_RNG_LEVEL(level) & 0x7fffffff) % 19) / 2) + HC_KEY + 2 \
+        __asm add ebp, ((-HC_PP_RNG_LEVEL(level) + 1) & HC_KEY) + HC_KEY + 1    \
         __asm add ebp, ((-HC_PP_RNG_LEVEL(level) + 2) & ~HC_KEY) +              \
-                (((HC_PP_RNG_LEVEL(level) & 0x7fffffff) % 13) / 2) + ~HC_KEY    \
+                (((HC_PP_RNG_LEVEL(level) & 0x7fffffff) % 23) / 2) + ~HC_KEY    \
         __asm and ebp, 0x7ffffff0                                               \
         __asm xor ebp, edx                                                      \
         __asm xor edx, ebp                                                      \
